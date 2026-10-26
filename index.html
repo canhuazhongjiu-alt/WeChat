@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#f6f7f9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="聊天分析器">
+<title>微信聊天分析器 · 手机版</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",system-ui,sans-serif;color:#111;background:#f6f7f9}*{box-sizing:border-box}body{margin:0}.app{max-width:720px;margin:auto;padding:env(safe-area-inset-top) 14px calc(28px + env(safe-area-inset-bottom))}.hero{padding:18px 6px 8px}.hero h1{font-size:28px;margin:8px 0}.hero p{margin:0;color:#667085;line-height:1.55}.pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#e9f9ef;color:#14804a;font-size:12px}.card{background:#fff;border:1px solid #eaecf0;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 2px 12px rgba(16,24,40,.04)}h2{font-size:18px;margin:0 0 14px}.upload{display:flex;min-height:68px;align-items:center;justify-content:center;border:1.5px dashed #98a2b3;border-radius:14px;padding:14px;text-align:center;font-weight:600}.upload input{display:none}button{border:0;border-radius:12px;padding:13px 15px;font-size:15px;font-weight:650;background:#101828;color:#fff;width:100%;margin-top:10px}.secondary{background:#eef2f6;color:#101828}.ghost{background:transparent;color:#475467;border:1px solid #d0d5dd}.danger{background:#fff1f3;color:#c01048}textarea,input{width:100%;border:1px solid #d0d5dd;border-radius:12px;padding:12px;font-size:15px;background:#fff;margin-top:7px}textarea{min-height:150px;resize:vertical}.preview{min-height:260px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.55}.hint,.status{font-size:13px;color:#667085;line-height:1.45}.status{min-height:18px;color:#175cd3}.checks{display:grid;gap:9px;margin-top:12px}.checks label{font-size:14px}.checks input{width:auto;margin:0 7px 0 0}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.section-head{display:flex;align-items:center;justify-content:space-between}.badge{font-size:12px;background:#f2f4f7;border-radius:999px;padding:5px 8px;color:#475467}.note{background:#fffaeb;border-color:#fedf89}.small{font-size:12px;color:#667085}label{font-size:14px;font-weight:600;color:#344054}@media(max-width:390px){.row{grid-template-columns:1fr}.hero h1{font-size:25px}}
+</style>
+</head>
+<body><main class="app">
+<header class="hero"><span class="pill">iPhone 单机版 · 本地优先</span><h1>微信聊天分析器</h1><p>从照片或文字导入聊天，在手机浏览器里整理、脱敏，再生成给 ChatGPT 的分析包。</p></header>
+<section class="card">
+<h2>① 导入聊天</h2>
+<label class="upload"><input id="fileInput" type="file" accept="image/*,.txt,.json,.csv,.md,text/plain" multiple><span>选择微信截图 / 文件</span></label>
+<button id="pasteBtn" class="secondary">读取剪贴板文字</button>
+<textarea id="rawText" placeholder="也可以长按这里，直接粘贴聊天文字……"></textarea>
+<div class="row"><button id="parseBtn">整理聊天</button><button id="clearBtn" class="ghost">清空</button></div>
+<p id="status" class="status"></p>
+<p class="small">截图 OCR 在你的浏览器中执行。首次识别需要联网加载识别组件，长截图可能比较慢。</p>
+</section>
+<section class="card">
+<h2>② 隐私与筛选</h2>
+<label>联系人关键词<input id="contactFilter" placeholder="例如：小王"></label>
+<label style="display:block;margin-top:10px">时间关键词<input id="timeFilter" placeholder="例如：10月 / 2026-10"></label>
+<div class="checks"><label><input id="maskPhone" type="checkbox" checked>隐藏手机号</label><label><input id="maskId" type="checkbox" checked>隐藏身份证号</label><label><input id="maskEmail" type="checkbox" checked>隐藏邮箱</label><label><input id="maskName" type="checkbox">把联系人名替换为“对方”</label></div>
+<button id="applyBtn">应用筛选与脱敏</button>
+</section>
+<section class="card"><div class="section-head"><h2>③ 检查识别结果</h2><span id="countBadge" class="badge">0 条</span></div><textarea id="preview" class="preview" placeholder="识别结果会出现在这里。你可以手动修正。"></textarea><p class="hint">截图识别会尝试按文字的左右位置标记“对方 / 我”，但微信主题、头像、长图裁剪都可能造成误判。发送给 ChatGPT 前请快速检查。</p></section>
+<section class="card">
+<h2>④ 生成 ChatGPT 分析包</h2>
+<label>你想问什么？<textarea id="question" style="min-height:100px" placeholder="例如：分析对方最近一个月对我的态度变化，引用具体聊天证据，并告诉我下一步怎么回复。"></textarea></label>
+<button id="copyPack">复制全部分析包</button><button id="sharePack" class="secondary">系统分享</button><button id="downloadPack" class="secondary">保存 TXT 文件</button>
+<p class="hint">最省事：点“复制全部分析包” → 打开 ChatGPT → 粘贴发送。如果记录很长，则保存 TXT 后在 ChatGPT 上传文件。</p>
+</section>
+<section class="card note"><h2>隐私</h2><p class="hint">本页面没有自己的聊天上传服务器。文字整理和脱敏在浏览器本地完成；截图识别组件从公共 CDN 加载。你最终主动复制、分享或上传给 ChatGPT 时，内容才会离开当前页面。</p></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);let parsed=[],filtered=[];const status=s=>$('status').textContent=s;
+function escapeRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+function mask(t){if($('maskPhone').checked)t=t.replace(/(?<!\d)(?:\+?86[- ]?)?1[3-9]\d{9}(?!\d)/g,'[手机号已隐藏]');if($('maskId').checked)t=t.replace(/(?<!\w)\d{17}[\dXx](?!\w)/g,'[身份证号已隐藏]');if($('maskEmail').checked)t=t.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[邮箱已隐藏]');return t}
+function splitMessages(text){const lines=text.replace(/\r/g,'').split('\n'),out=[];let cur=null;const p1=/^\s*\[?(\d{4}[\/\-.年]\d{1,2}[\/\-.月]\d{1,2}日?\s+\d{1,2}:\d{2}(?::\d{2})?)\]?\s+([^:：]{1,40})[:：]\s*(.*)$/;const p2=/^\s*([^:：]{1,20})[:：]\s*(.*)$/;for(const raw of lines){const line=raw.trimEnd();if(!line.trim())continue;let m=line.match(p1);if(m){if(cur)out.push(cur);cur={time:m[1],sender:m[2].trim(),content:m[3].trim()};continue}m=line.match(p2);if(m&&!/^https?$/i.test(m[1])){if(cur)out.push(cur);cur={time:'',sender:m[1].trim(),content:m[2].trim()};continue}if(cur)cur.content+='\n'+line;else cur={time:'',sender:'未知',content:line}}if(cur)out.push(cur);return out}
+function render(){const text=filtered.map(m=>`${m.time?'['+m.time+'] ':''}${m.sender}: ${m.content}`).join('\n\n');$('preview').value=text;$('countBadge').textContent=`${filtered.length} 条`}
+function parsePreviewText(){const text=$('preview').value.trim();return text?splitMessages(text):[]}
+async function ocrImage(file){status(`正在识别 ${file.name||'截图'}…`);const r=await Tesseract.recognize(file,'chi_sim+eng',{logger:m=>{if(m.status==='recognizing text')status(`截图识别 ${Math.round((m.progress||0)*100)}%`)}});const d=r.data;if(d.words&&d.words.length){const W=d.width||1;const words=d.words.filter(w=>w.text&&w.text.trim()).sort((a,b)=>a.bbox.y0-b.bbox.y0||a.bbox.x0-b.bbox.x0);let rows=[];for(const w of words){let row=rows.find(x=>Math.abs(x.y-w.bbox.y0)<18);if(!row){row={y:w.bbox.y0,words:[]};rows.push(row)}row.words.push(w)}return rows.sort((a,b)=>a.y-b.y).map(row=>{row.words.sort((a,b)=>a.bbox.x0-b.bbox.x0);const text=row.words.map(w=>w.text).join(' ').trim();const x0=Math.min(...row.words.map(w=>w.bbox.x0)),x1=Math.max(...row.words.map(w=>w.bbox.x1)),mid=(x0+x1)/2/W;let who=mid<.46?'对方':mid>.54?'我':'系统';if(/^\d{1,2}:\d{2}$/.test(text)||/^(昨天|今天|星期|周)/.test(text))who='时间';return who==='系统'||who==='时间'?text:`${who}: ${text}`}).join('\n')}return d.text||''}
+$('fileInput').onchange=async e=>{let txt=$('rawText').value;for(const f of [...e.target.files]){try{txt+='\n'+(f.type.startsWith('image/')?await ocrImage(f):await f.text())}catch(err){status('读取失败：'+f.name)}}$('rawText').value=txt.trim();status('导入完成，可以点“整理聊天”。')}
+$('pasteBtn').onclick=async()=>{try{$('rawText').value=($('rawText').value+'\n'+await navigator.clipboard.readText()).trim();status('已读取剪贴板。')}catch{status('Safari 未允许自动读取，请长按文本框选择“粘贴”。')}}
+$('parseBtn').onclick=()=>{const t=$('rawText').value.trim();if(!t)return status('请先选择截图或粘贴聊天。');parsed=splitMessages(t);filtered=[...parsed];render();status(`已整理 ${parsed.length} 条。`)}
+$('applyBtn').onclick=()=>{const who=$('contactFilter').value.trim(),when=$('timeFilter').value.trim();filtered=parsed.filter(m=>(!who||(m.sender+' '+m.content).includes(who))&&(!when||(m.time+' '+m.content).includes(when))).map(m=>{let sender=m.sender,content=mask(m.content);if(who&&$('maskName').checked){const re=new RegExp(escapeRe(who),'gi');sender=sender.replace(re,'对方');content=content.replace(re,'对方')}return {...m,sender,content}});render();status('筛选和脱敏已应用。')}
+$('clearBtn').onclick=()=>{$('rawText').value='';$('preview').value='';parsed=[];filtered=[];$('countBadge').textContent='0 条';status('已清空。')}
+function pack(){const q=$('question').value.trim()||'请分析以下聊天记录，并引用具体证据。';const chat=$('preview').value.trim();return `【分析任务】\n${q}\n\n【聊天记录】\n${chat}\n\n【分析要求】\n1. 区分事实、推断和不确定信息。\n2. 引用具体聊天内容作为证据。\n3. 不要仅凭一句话过度推断心理。\n4. 如果聊天记录存在 OCR 错误或上下文不足，请明确指出。`}
+$('copyPack').onclick=async()=>{try{await navigator.clipboard.writeText(pack());status('分析包已复制，打开 ChatGPT 粘贴即可。')}catch{status('自动复制失败，请长按预览内容手动复制。')}}
+$('sharePack').onclick=async()=>{if(navigator.share){try{await navigator.share({title:'微信聊天分析包',text:pack()})}catch{}}else status('当前 Safari 不支持系统分享，请用复制。')}
+$('downloadPack').onclick=()=>{const b=new Blob([pack()],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='微信聊天分析包.txt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+</script></body></html>
